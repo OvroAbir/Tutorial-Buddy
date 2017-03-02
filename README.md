@@ -7,3 +7,9 @@
 
 sudo pip install google-api-python-client
 ```
+* Install pytube: 
+```
+#!bash
+
+sudo pip install pytube
+```
