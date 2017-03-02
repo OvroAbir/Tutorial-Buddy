@@ -1,9 +1,11 @@
+from pytube import YouTube
+from apiclient.discovery import build
+from oauth2client.tools import argparser
+import os, shutil, urllib, cv2
+
 class Youtube:
 	@staticmethod
 	def download(video_id, download_folder="/tmp/"):
-		from pytube import YouTube
-		import os
-
 		try:
 			yt=YouTube("https://www.youtube.com/watch?v="+video_id)
 			print "Downloading file: "+yt.filename
@@ -21,9 +23,6 @@ class Youtube:
 
 	@staticmethod
 	def search(search_term, max_results=25):
-		from apiclient.discovery import build
-		from oauth2client.tools import argparser
-
 		DEVELOPER_KEY="AIzaSyAyXI7PZSzjmE5luCjhr8q01l1JO7hcxFk"
 		YOUTUBE_API_SERVICE_NAME="youtube"
 		YOUTUBE_API_VERSION="v3"
@@ -53,5 +52,34 @@ class Youtube:
 			return youtube_search(args)
 		except HttpError, e:
 			print "An error occured."
+	###
+###
+
+class Video:
+	@staticmethod
+	def extract_frames(video_file, folder="/tmp/snapshots/"):
+		print "Extracting frames in "+folder
+
+		if(os.path.exists(folder)): shutil.rmtree(folder)
+		os.mkdir(folder)
+
+		cap=cv2.VideoCapture(video_file)
+		frameRate=cap.get(5)					# frame rate
+		count=1
+
+		while(cap.isOpened()):
+			frameId=int(frameRate*count)		# current frame number
+			cap.set(1,frameId)
+			ret,frame=cap.read()
+
+			if(ret is False): break
+			filename=os.path.join(folder,"{}.jpeg".format(count))
+			cv2.imwrite(filename, frame)
+			count+=1
+
+		cap.release()
+		print "Extraction completed."
+
+		return folder
 	###
 ###
