@@ -1,5 +1,3 @@
-from api_collection import YoutubeSearch
+from api_collection import Youtube
 
-
-for x in YoutubeSearch.search("convolutional neural network"):
-	print x
+Youtube.download("4y33h81phKU", download_folder="/home/aswasif007/Desktop")

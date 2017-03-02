@@ -1,8 +1,27 @@
-class YoutubeSearch:
+class Youtube:
+	@staticmethod
+	def download(video_id, download_folder="/tmp/"):
+		from pytube import YouTube
+		import os
+
+		try:
+			yt=YouTube("https://www.youtube.com/watch?v="+video_id)
+			print "Downloading file: "+yt.filename
+			video=yt.filter('mp4')[-1]
+			video.download(download_folder)
+			print "Download completed."
+
+			return os.path.join(download_folder, yt.filename)
+		except OSError, e:
+			print "File already exists."
+			return os.path.join(download_folder, yt.filename)
+		except:
+			print "An error has occurred."
+	###
+
 	@staticmethod
 	def search(search_term, max_results=25):
 		from apiclient.discovery import build
-		from apiclient.errors import HttpError
 		from oauth2client.tools import argparser
 
 		DEVELOPER_KEY="AIzaSyAyXI7PZSzjmE5luCjhr8q01l1JO7hcxFk"
@@ -33,6 +52,6 @@ class YoutubeSearch:
 		try:
 			return youtube_search(args)
 		except HttpError, e:
-			print "An HTTP error %d occurred:\n%s" % (e.resp.status, e.content)
+			print "An error occured."
 	###
 ###
