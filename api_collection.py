@@ -1,7 +1,8 @@
 from pytube import YouTube
 from apiclient.discovery import build
 from oauth2client.tools import argparser
-import os, shutil, urllib, cv2
+from itertools import izip
+import os, shutil, urllib, cv2, Image
 
 class Youtube:
 	@staticmethod
@@ -56,6 +57,48 @@ class Youtube:
 ###
 
 class Video:
+	@staticmethod
+	def eliminate_irrelevants(folder="/tmp/snapshots"):
+		def img_compare(img_name_1, img_name_2):
+			i1 = Image.open(img_name_1)
+			i2 = Image.open(img_name_2)
+			assert i1.mode == i2.mode, "Different kinds of images."
+			assert i1.size == i2.size, "Different sizes."
+		 
+			pairs = izip(i1.getdata(), i2.getdata())
+			if len(i1.getbands()) == 1:
+			    # for gray-scale jpegs
+			    dif = sum(abs(p1-p2) for p1,p2 in pairs)
+			else:
+			    dif = sum(abs(c1-c2) for p1,p2 in pairs for c1,c2 in zip(p1,p2))
+			 
+			ncomponents = i1.size[0] * i1.size[1] * 3
+			return (dif / 255.0 * 100) / ncomponents
+		###
+
+		onlyfiles = [f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f))]
+		have_to_delete=False
+		num_of_imgs = len(onlyfiles)
+
+		for i in range(1, len(onlyfiles)):
+			img_name_1 = os.path.join(folder,str(i)+".jpeg") 
+			img_name_2 = os.path.join(folder,str(i+1)+".jpeg") 
+
+			print img_name_1 , " , " , img_name_2 , ":" ,img_compare(img_name_1, img_name_2)
+			difference = img_compare(img_name_1, img_name_2)
+
+			if(have_to_delete):
+				print "Deleting ", last_img_name
+				os.remove(last_img_name)
+
+			have_to_delete=bool(difference<=10)
+			last_img_name=img_name_2
+
+		if(difference<=10):
+			print "Deleting ", last_img_name
+			os.remove(last_img_name)
+	###
+
 	@staticmethod
 	def extract_frames(video_file, folder="/tmp/snapshots/"):
 		print "Extracting frames in "+folder
