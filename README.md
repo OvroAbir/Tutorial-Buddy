@@ -19,3 +19,9 @@ sudo pip install pytube
 
 sudo apt-get install libopencv-dev python-opencv
 ```
+* Install SciPy: 
+```
+#!bash
+
+sudo pip install scipy
+```
