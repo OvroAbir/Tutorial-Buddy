@@ -12,6 +12,13 @@ sudo pip install google-api-python-client
 #!bash
 
 sudo pip install pytube
+
+* Install Tesseract OCR: 
+```
+#!bash
+
+sudo pip install pytesseract
+
 ```
 * Install OpenCV: 
 ```
