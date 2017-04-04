@@ -2,7 +2,8 @@ from pytube import YouTube
 from apiclient.discovery import build
 from oauth2client.tools import argparser
 from itertools import izip
-import os, shutil, urllib, cv2, Image
+from PIL import Image,ImageFilter
+import os, shutil, urllib, cv2, pytesseract as tess
 
 class Youtube:
 	@staticmethod
@@ -14,10 +15,10 @@ class Youtube:
 			video.download(download_folder)
 			print "Download completed."
 
-			return os.path.join(download_folder, yt.filename)
+			return os.path.join(download_folder, yt.filename+'.mp4')
 		except OSError, e:
 			print "File already exists."
-			return os.path.join(download_folder, yt.filename)
+			return os.path.join(download_folder, yt.filename+'.mp4')
 		except:
 			print "An error has occurred."
 	###
@@ -108,21 +109,45 @@ class Video:
 
 		cap=cv2.VideoCapture(video_file)
 		frameRate=cap.get(5)					# frame rate
-		count=1
+		count=0
+		nm=1
+
+		print cap.get(7)
+	
 
 		while(cap.isOpened()):
 			frameId=int(frameRate*count)		# current frame number
-			cap.set(1,frameId)
+			# cap.set(1,frameId)
 			ret,frame=cap.read()
 
 			if(ret is False): break
-			filename=os.path.join(folder,"{}.jpeg".format(count))
-			cv2.imwrite(filename, frame)
+
+			if(count%int(frameRate*2)==0):
+				filename=os.path.join(folder,"{}.jpeg".format(nm))
+				cv2.imwrite(filename, frame)
+				nm+=1
+
 			count+=1
 
 		cap.release()
-		print "Extraction completed."
 
+		print "Extraction completed."
 		return folder
+	###
+###
+
+class Frame:
+	@staticmethod
+	def extract_words(img):
+		img=Image.open("1.png").filter(ImageFilter.SHARPEN)
+		img.convert("1")
+		img.show()
+		raw=tess.image_to_string(img)
+
+		out=""
+		for c in raw:
+			if(c is ' ' or 'a'<=c<='z' or 'A'<=c<='Z'): out+=c
+
+		return out.lower().split()
 	###
 ###

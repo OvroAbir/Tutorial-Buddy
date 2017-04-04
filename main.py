@@ -1,9 +1,17 @@
-from api_collection import Youtube, Video
+from api_collection import *
 
-# Youtube.download(video_id="4y33h81phKU", download_folder="/home/aswasif007/Desktop")
 
-file="/home/aswasif007/Desktop/1.mp4"
+file=Youtube.download(video_id="H4JEkZgI4gU", download_folder="/home/aswasif007/Desktop")
+
+# print file
+
+keywords=['hacking', 'ethical', 'attack', 'denial', 'service']
 temp="/home/aswasif007/Desktop/snapshots"
 
-# print Video.extract_frames(file, folder="/home/aswasif007/Desktop/snapshots")
-# Video.remove_duplicates(folder="/home/aswasif007/Desktop/snapshots")
+Video.extract_frames(file, folder=temp)
+# Video.eliminate_irrelevants(folder="/home/aswasif007/Desktop/snapshots")
+
+# words=Frame.extract_words(file)
+# for w in  words:
+# 	if(w in keywords):
+# 		print w
