@@ -34,9 +34,9 @@ sudo apt-get install libopencv-dev python-opencv
 
 sudo pip install scipy
 ```
-* Install UrlLib: 
+* Install PySrt: 
 ```
 #!bash
 
-sudo pip install urllib3
+sudo pip install pysrt
 ```
