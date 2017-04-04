@@ -19,6 +19,7 @@ sudo pip install pytube
 #!bash
 
 sudo pip install pytesseract
+sudo apt-get install tesseract-ocr
 
 ```
 * Install OpenCV: 
