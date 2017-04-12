@@ -40,3 +40,15 @@ sudo pip install scipy
 
 sudo pip install pysrt
 ```
+* Install PyDub: 
+```
+#!bash
+
+pip install pydub
+```
+* Install SpeechRecognition: 
+```
+#!bash
+
+pip install SpeechRecognition
+```
