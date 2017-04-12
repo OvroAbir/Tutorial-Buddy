@@ -44,11 +44,11 @@ sudo pip install pysrt
 ```
 #!bash
 
-pip install pydub
+sudo pip install pydub
 ```
 * Install SpeechRecognition: 
 ```
 #!bash
 
-pip install SpeechRecognition
+sudo pip install SpeechRecognition
 ```
