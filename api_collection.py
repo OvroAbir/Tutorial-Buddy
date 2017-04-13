@@ -3,7 +3,7 @@ from apiclient.discovery import build
 from oauth2client.tools import argparser
 from itertools import izip
 from PIL import Image,ImageFilter
-import os, shutil, urllib, cv2, pytesseract as tess
+import os, shutil, urllib, cv2, pytesseract as tess, pysrt
 
 class Youtube:
 	@staticmethod
@@ -81,23 +81,19 @@ class Video:
 		have_to_delete=False
 		num_of_imgs = len(onlyfiles)
 
-		for i in range(1, len(onlyfiles)):
+		last_saved=os.path.join(folder,str(1)+".jpeg")
+
+		for i in range(2, len(onlyfiles)):
 			img_name_1 = os.path.join(folder,str(i)+".jpeg") 
-			img_name_2 = os.path.join(folder,str(i+1)+".jpeg") 
 
-			print img_name_1 , " , " , img_name_2 , ":" ,img_compare(img_name_1, img_name_2)
-			difference = img_compare(img_name_1, img_name_2)
+			difference = img_compare(img_name_1, last_saved)
+			print img_name_1 , " , " , last_saved , ":" ,difference
 
-			if(have_to_delete):
-				print "Deleting ", last_img_name
-				os.remove(last_img_name)
-
-			have_to_delete=bool(difference<=10)
-			last_img_name=img_name_2
-
-		if(difference<=10):
-			print "Deleting ", last_img_name
-			os.remove(last_img_name)
+			if(difference<=2):
+				print "Deleting ", img_name_1
+				os.remove(img_name_1)
+			else:
+				last_saved=img_name_1
 	###
 
 	@staticmethod
@@ -122,7 +118,7 @@ class Video:
 
 			if(ret is False): break
 
-			if(count%int(frameRate*2)==0):
+			if(count%int(frameRate)==0):
 				filename=os.path.join(folder,"{}.jpeg".format(nm))
 				cv2.imwrite(filename, frame)
 				nm+=1
@@ -138,10 +134,9 @@ class Video:
 
 class Frame:
 	@staticmethod
-	def extract_words(img):
-		img=Image.open("1.png").filter(ImageFilter.SHARPEN)
-		img.convert("1")
-		img.show()
+	def extract_words(img_location):
+		img=Image.open(img_location).filter(ImageFilter.SHARPEN)
+
 		raw=tess.image_to_string(img)
 
 		out=""
@@ -149,5 +144,28 @@ class Frame:
 			if(c is ' ' or 'a'<=c<='z' or 'A'<=c<='Z'): out+=c
 
 		return out.lower().split()
+	###
+###
+
+class Audio:
+	@staticmethod
+	def get_matched_subs(subs, keywords):
+		matched_subs = []
+		for i in range(0, len(subs)):
+			sub = subs[i]
+			text = sub.text
+			for kw in keywords:
+				if(kw in sub.text):
+					matched_subs.append(sub)
+		return matched_subs
+	###
+
+	@staticmethod
+	def print_subs(subs):
+		for i in range(0, len(subs)):
+			sub = subs[i]
+			start_time = str(sub.start.hours) + '.' + str(sub.start.minutes) + '.' + str(sub.start.seconds)
+			end_time = str(sub.end.hours) + '.' + str(sub.end.minutes) + '.' + str(sub.end.seconds)
+			print '[' + start_time +'] ' + sub.text + '[' + end_time +'] '
 	###
 ###
