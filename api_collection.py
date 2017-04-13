@@ -136,20 +136,28 @@ class Video:
 	###
 ###
 
+
 class Frame:
 	@staticmethod
+	def prepare_img_for_ocr(img_location):
+		img = Image.open(img_location)
+		width, height = img.size
+		if(width < 1366 or height < 768):
+			target_ratio = max(1366/width, 768/height)
+			img = img.resize((width*target_ratio, height*target_ratio), Image.ANTIALIAS)
+		img = img.filter(ImageFilter.SHARPEN)
+		img = img.save(img_location, dpi=(350, 350))
+
+
+	@staticmethod
 	def extract_words(img_location):
-		img=Image.open(img_location).filter(ImageFilter.SHARPEN)
+		Frame.prepare_img_for_ocr(img_location)
 
 		raw=tess.image_to_string(img)
-
-		out=""
-		for c in raw:
-			if(c is ' ' or 'a'<=c<='z' or 'A'<=c<='Z'): out+=c
-
-		return out.lower().split()
+		return raw.lower().split()
 	###
 ###
+
 
 class Subtitle:
 	@staticmethod
