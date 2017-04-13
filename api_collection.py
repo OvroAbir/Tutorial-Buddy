@@ -5,6 +5,10 @@ from itertools import izip
 from PIL import Image,ImageFilter
 import os, shutil, urllib, cv2, pytesseract as tess, pysrt
 
+import speech_recognition as sr
+import subprocess, ffmpy, glob, os.path
+from pydub import AudioSegment
+
 class Youtube:
 	@staticmethod
 	def download(video_id, download_folder="/tmp/"):
@@ -147,7 +151,7 @@ class Frame:
 	###
 ###
 
-class Audio:
+class Subtitle:
 	@staticmethod
 	def get_matched_subs(subs, keywords):
 		matched_subs = []
@@ -167,5 +171,169 @@ class Audio:
 			start_time = str(sub.start.hours) + '.' + str(sub.start.minutes) + '.' + str(sub.start.seconds)
 			end_time = str(sub.end.hours) + '.' + str(sub.end.minutes) + '.' + str(sub.end.seconds)
 			print '[' + start_time +'] ' + sub.text + '[' + end_time +'] '
+	###
+###
+
+
+class Audio:
+	BING_KEY = "e6a333fe4c364e35b464893e5f9a7320" 
+	WIT_AI_KEY = "PMXQI5BPL4M2MN5LG5RDVDSLSGR4RB5Q"
+
+	@staticmethod
+	def get_text_from_part_audio_BING(audio_file_name):
+		if(not os.path.isfile(audio_file_name)):
+			return ' '
+
+		r = sr.Recognizer()
+		with sr.AudioFile(audio_file_name) as source:
+			audio = r.record(source)
+		result = ' '
+
+		try:
+			result = r.recognize_bing(audio, key=Audio.BING_KEY)
+		except sr.UnknownValueError:
+			result = ' '
+			print("Microsoft Bing Voice Recognition could not understand audio in " + audio_file_name)
+		except sr.RequestError as e:
+			result = ' '
+			print("Could not request results from Microsoft Bing Voice Recognition service; {0}".format(e))
+			print("For file : " + audio_file_name)
+
+		return result
+	###
+
+	@staticmethod
+	def get_text_from_part_audio_WIT(audio_file_name):
+		if(not os.path.isfile(audio_file_name)):
+			return ' '
+		r = sr.Recognizer()
+		with sr.AudioFile(audio_file_name) as source:
+			audio = r.record(source)
+		result = ' '
+
+		try:
+		    result = r.recognize_wit(audio, key=Audio.WIT_AI_KEY)
+		except sr.UnknownValueError:
+			result = ' '
+			print("Wit.ai could not understand audio in " + audio_file_name)
+		except sr.RequestError as e:
+			result = ' '
+			print("Could not request results from Wit.ai service; {0}".format(e))
+			print("For file : " + audio_file_name)
+
+		return result
+	###
+
+	@staticmethod
+	def slice_audio(audio_file_name, slice_duration):
+		if(os.path.exists('./trim')):
+			shutil.rmtree('./trim')
+		
+		os.mkdir('trim')
+
+		whole_audio = AudioSegment.from_wav(audio_file_name)
+		length = whole_audio.duration_seconds
+
+		num_of_parts = int(length//slice_duration)
+		num_of_part_files = num_of_parts
+
+		for i in range(0, num_of_parts):
+			part = whole_audio[i*slice_duration*1000:(i+1)*slice_duration*1000]
+			part.export('trim/part%d.wav'%(i), format='wav')
+
+		last_part_len = length - num_of_parts*slice_duration
+		if(last_part_len >= 5):
+			part = whole_audio[-last_part_len*1000:]
+			part.export('trim/part%d.wav'%(num_of_parts), format='wav')
+			num_of_part_files+=1
+
+		return num_of_part_files
+	###
+
+	@staticmethod
+	def build_srt(audio_file_name, whole_string, slice_duration):
+		srt_file_name = 'TranscribeFromAudio.srt'
+		if(os.path.exists(srt_file_name)):
+			os.remove(srt_file_name)
+
+		srt_file = open(srt_file_name, 'w')
+
+		for i in range(0, len(whole_string)):
+			srt_file.write(str(i+1)+'\n')
+			start_time = i*slice_duration
+			end_time = (i+1)*slice_duration
+
+			sh = int(start_time//3600)
+			sm = int((start_time - sh*3600)//60)
+			ss = start_time%60
+
+			eh = int(end_time//3600)
+			em = int((end_time - sh*3600)//60)
+			es = end_time%60
+			
+			time_str = '%02d:%02d:%02d,000 --> %02d:%02d:%02d,000\n'%(sh, sm, ss, eh, em, es)
+			srt_file.write(time_str)
+			srt_file.write(whole_string[i]+'\n\n')
+
+		srt_file.close()
+
+		return srt_file_name
+	###
+
+	@staticmethod
+	def build_srt_from_audio(audio_file_name, slice_duration):
+		num_of_files = Audio.slice_audio(audio_file_name, slice_duration)
+
+		whole_string = []
+
+		#num_of_files = len(glob.glob('trim/*.wav'))
+
+		for i in range(0, num_of_files):
+			part_file_name = 'trim/part%d.wav'%(i)
+			part_text = Audio.get_text_from_part_audio_BING(part_file_name)
+			#part_text = Audio.get_text_from_part_audio_WIT(part_file_name)
+			whole_string.append(part_text)
+			print "Transcribed %d/%d part files" %(i+1, num_of_files)
+		print '\n'
+
+		return Audio.build_srt(audio_file_name, whole_string, slice_duration)
+	###
+
+	@staticmethod
+	def extract_audio(video_file_name, output_format='wav'):
+		#video_file_name = video_file_name.replace(' ', '\ ')
+		file_name_without_format = video_file_name.split('.')[:-1]
+		output_file_name = file_name_without_format[0] + '.' + output_format
+
+		if(os.path.isfile(output_file_name)):
+			os.remove(output_file_name)
+
+		inputs = {video_file_name : None}
+		outputs = {output_file_name : None}
+		ff = ffmpy.FFmpeg(inputs=inputs, outputs=outputs)
+		#print ff.cmd
+		ff.run()
+
+		return output_file_name
+	###
+
+	@staticmethod
+	def clean_up(audio_file_name):
+		if(os.path.exists('./trim')):
+			shutil.rmtree('./trim')
+		if(os.path.isfile(audio_file_name)):
+			os.remove(audio_file_name)
+	###
+
+	@staticmethod
+	def transcribe_video_file(video_file_name, slice_duration = 15):
+		audio_file_name = Audio.extract_audio(video_file_name)
+		
+		print '\n\nStarted transcribing...'
+		transcribed_srt_file_name = Audio.build_srt_from_audio(audio_file_name, slice_duration)
+		
+		Audio.clean_up(audio_file_name)
+
+		return transcribed_srt_file_name
 	###
 ###
