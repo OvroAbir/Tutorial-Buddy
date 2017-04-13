@@ -13,7 +13,7 @@ def get_matched_snapshots(folder, keywords):
 	return matched_img_names
 ###
 
-
+'''
 file=Youtube.download(video_id="1p6LfUkWPKI", download_folder="/home/joy/Desktop")
 
 # print file
@@ -33,5 +33,7 @@ srtfile = '1.srt'
 subs = pysrt.open(srtfile)
 
 keywords = ['assembly', 'language']
-matched_subs = Audio.get_matched_subs(subs, keywords)
-Audio.print_subs(matched_subs)
+matched_subs = Subtitle.get_matched_subs(subs, keywords)
+Subtitle.print_subs(matched_subs)
+'''
+f = Audio.transcribe_video_file("/home/joy/Desktop/ffile.mp4")
