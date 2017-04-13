@@ -46,9 +46,16 @@ sudo pip install pysrt
 
 sudo pip install pydub
 ```
-* Install SpeechRecognition: 
+* Install SpeechRecognition API: 
 ```
 #!bash
 
 sudo pip install SpeechRecognition
+```
+
+* Install ffmpy: 
+```
+#!bash
+
+sudo pip install ffmpy
 ```
