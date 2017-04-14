@@ -59,3 +59,10 @@ sudo pip install SpeechRecognition
 
 sudo pip install ffmpy
 ```
+
+* Install youtube-dl: 
+```
+#!bash
+
+sudo -H pip install --upgrade youtube-dl
+```
