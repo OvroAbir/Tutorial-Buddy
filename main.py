@@ -36,4 +36,7 @@ keywords = ['assembly', 'language']
 matched_subs = Subtitle.get_matched_subs(subs, keywords)
 Subtitle.print_subs(matched_subs)
 '''
-f = Audio.transcribe_video_file("/home/joy/Desktop/ffile.mp4")
+#f = Audio.transcribe_video_file("/home/joy/Desktop/ffile.mp4")
+
+print 'Here'
+print Youtube.download_subtitle('1p6LfUkWPKI')

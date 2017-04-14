@@ -59,6 +59,40 @@ class Youtube:
 		except HttpError, e:
 			print "An error occured."
 	###
+
+	@staticmethod
+	def convert_to_srt(video_id):
+		srt_name = video_id + '.en.srt'
+		vtt_name = video_id + '.en.vtt'
+		ass_name = video_id + '.en.ass'
+
+		if(os.path.isfile(srt_name)):
+			return srt_name
+		
+		current_name = ''
+		if(os.path.isfile(vtt_name)):
+			current_name = vtt_name
+		elif(os.path.isfile(ass_name)):
+			current_name = ass_name
+
+		inputs = {current_name:None}
+		outputs = {srt_name:None}
+		ff = ffmpy.FFmpeg(inputs=inputs, outputs=outputs)
+		ff.run()
+
+		os.remove(current_name)
+
+		return srt_name
+	###
+
+	@staticmethod
+	def download_subtitle(video_id):
+		v_url = 'https://www.youtube.com/watch?v='+video_id
+		command = 'youtube-dl -o "%(id)s" --write-sub --write-auto-sub --sub-lang en --sub-format srt --convert-subs srt --skip-download ' + v_url
+		subprocess.call(command, shell=True)
+
+		return Youtube.convert_to_srt(video_id)
+	###
 ###
 
 class Video:
@@ -310,8 +344,8 @@ class Audio:
 	@staticmethod
 	def extract_audio(video_file_name, output_format='wav'):
 		#video_file_name = video_file_name.replace(' ', '\ ')
-		file_name_without_format = video_file_name.split('.')[:-1]
-		output_file_name = file_name_without_format[0] + '.' + output_format
+		file_name_without_format = "".join(video_file_name.split('.')[:-1])
+		output_file_name = file_name_without_format + '.' + output_format
 
 		if(os.path.isfile(output_file_name)):
 			os.remove(output_file_name)
