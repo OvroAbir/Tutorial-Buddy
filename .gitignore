@@ -1,0 +1,7 @@
+*.png
+*.jpeg
+./trim
+*.srt
+*.vtt
+*.mp4
+*.pyc
