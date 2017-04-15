@@ -5,5 +5,4 @@
 *.vtt
 *.mp4
 *.pyc
-*.py~
-*.gitignore~
+*.*~

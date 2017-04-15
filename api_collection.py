@@ -9,6 +9,9 @@ import speech_recognition as sr
 import subprocess, ffmpy, glob, os.path
 from pydub import AudioSegment
 
+from weighted_levenshtein import lev
+import numpy as np
+
 class Youtube:
 	@staticmethod
 	def download(video_id, download_folder="/tmp/"):
@@ -181,14 +184,26 @@ class Frame:
 			img = img.resize((width*target_ratio, height*target_ratio), Image.ANTIALIAS)
 		img = img.filter(ImageFilter.SHARPEN)
 		img = img.save(img_location, dpi=(350, 350))
-
+	###
 
 	@staticmethod
 	def extract_words(img_location):
 		Frame.prepare_img_for_ocr(img_location)
-
+		img = Image.open(img_location)
 		raw=tess.image_to_string(img)
 		return raw.lower().split()
+	###
+
+	@staticmethod
+	def get_matched_snapshots(folder, keywords):
+		matched_img_names = []
+		img_names = glob.glob(folder + '/*.jpeg')
+		for img_name in img_names:
+			words = Frame.extract_words(img_name)
+			for keyword in keywords:
+				if(WordDistance.iskeyword_in_wordlist(keyword, words) and img_name not in matched_img_names):
+					matched_img_names.append(img_name)
+		return matched_img_names
 	###
 ###
 
@@ -378,4 +393,114 @@ class Audio:
 
 		return transcribed_srt_file_name
 	###
+###
+
+
+class WordDistance:
+	table_generated = False
+	max_distance = 2
+	substitute_costs = np.ones((128, 128), dtype=np.float64)
+
+	@staticmethod
+	def isalphanum(x):
+		if(ord(x) >= ord('a') and ord(x) <= ord('z')):
+			return True
+		if(ord(x) >= ord('0') and ord(x) <= ord('9')):
+			return True
+		if(ord(x) >= ord('A') and ord(x) <= ord('Z')):
+			return True
+		return False
+
+	@staticmethod
+	def get_group_index(x):
+		same_groups = [['V','v','X','x'],
+						['y'],
+						['A'],
+						['Z', 'z'],
+						['I', 'i', 'l', '1'],
+						['Y'],
+						['J', 'j'],
+						['t'],
+						['T'],
+						['K', 'k'],
+						['L'],
+						['r'],
+						['C', 'c'],
+						['F', 'f'],
+						['E'],
+						['N'],
+						['M', 'W', 'w'],
+						['U', 'u'],
+						['H'],
+						['b', 'h', 'd'],
+						['n'],
+						['D', 'o', 'O', '0'],
+						['Q'],
+						['P'],
+						['q'],
+						['R', 'p'],
+						['S', 'B', 'G', 'a', 'e', 's', '5', '6'],
+						['g'],
+						['m'],
+						['2'],
+						['3'],
+						['4'],
+						['7'],
+						['8'],
+						['9']]
+
+		for i in range(0, len(same_groups)):
+			if(x in same_groups[i]):
+				return i
+		print 'Did not find index of ' + x
+		return -1
+	###
+
+	@staticmethod
+	def get_distance(a, b):
+		if(WordDistance.isalphanum(a) == False or WordDistance.isalphanum(b) == False):
+			return WordDistance.max_distance
+
+		idx1 = WordDistance.get_group_index(a)
+		idx2 = WordDistance.get_group_index(b)
+
+		if(idx1 == idx2):
+			return 0.6*WordDistance.max_distance/35.0
+		return abs(idx1-idx2)*WordDistance.max_distance/35.0
+	###
+
+
+	@staticmethod
+	def generate_weight_table():
+		if(WordDistance.table_generated == True):
+			return
+		WordDistance.table_generated = True
+
+		for i in range(0, 128):
+			for j in range(i, 128):
+				if(i == j):
+					WordDistance.substitute_costs[i][j] = 0
+				else:
+					WordDistance.substitute_costs[i][j] = WordDistance.substitute_costs[j][i] = WordDistance.get_distance(chr(i), chr(j))
+		
+		return
+	###
+
+	@staticmethod
+	def issameword(word1, word2):
+		WordDistance.generate_weight_table()
+		dist = lev(word1, word2, substitute_costs=WordDistance.substitute_costs)
+
+		if(dist < 0.3):
+			return True
+		return False
+	###
+
+	@staticmethod
+	def iskeyword_in_wordlist(keyword, wordlist):
+		for word in wordlist:
+			if(WordDistance.issameword(keyword, word) == True):
+				return True
+		return False
+
 ###

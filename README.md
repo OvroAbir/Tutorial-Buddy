@@ -66,3 +66,17 @@ sudo pip install ffmpy
 
 sudo -H pip install --upgrade youtube-dl
 ```
+
+* Install weighted-levenshtein: 
+```
+#!bash
+
+sudo pip install weighted-levenshtein
+```
+
+* Install numpy: 
+```
+#!bash
+sudo python -m pip install --upgrade pip
+sudo pip install --user numpy scipy matplotlib ipython jupyter pandas sympy nose
+```
