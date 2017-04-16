@@ -1,12 +1,12 @@
 from api_collection import *
+from os.path import expanduser as native_path
 
-
-file=Youtube.download(video_id="1p6LfUkWPKI", download_folder="/home/joy/Desktop")
+file=Youtube.download(video_id="1p6LfUkWPKI", download_folder=native_path("~/Desktop"))
 
 # print file
 
 keywords=['assembly', 'programming', 'x86', 'denial', 'service']
-temp="/home/joy/Desktop/snapshots"
+temp=native_path("~/Desktop/snapshots")
 
 Video.extract_frames(file, folder=temp)
 Video.eliminate_irrelevants(folder=temp)
