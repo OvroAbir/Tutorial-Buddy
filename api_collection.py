@@ -71,7 +71,7 @@ class Youtube:
 
 		if(os.path.isfile(srt_name)):
 			return srt_name
-		
+
 		current_name = ''
 		if(os.path.isfile(vtt_name)):
 			current_name = vtt_name
@@ -106,14 +106,14 @@ class Video:
 			i2 = Image.open(img_name_2)
 			assert i1.mode == i2.mode, "Different kinds of images."
 			assert i1.size == i2.size, "Different sizes."
-		 
+
 			pairs = izip(i1.getdata(), i2.getdata())
 			if len(i1.getbands()) == 1:
 			    # for gray-scale jpegs
 			    dif = sum(abs(p1-p2) for p1,p2 in pairs)
 			else:
 			    dif = sum(abs(c1-c2) for p1,p2 in pairs for c1,c2 in zip(p1,p2))
-			 
+
 			ncomponents = i1.size[0] * i1.size[1] * 3
 			return (dif / 255.0 * 100) / ncomponents
 		###
@@ -125,7 +125,7 @@ class Video:
 		last_saved=os.path.join(folder,str(1)+".jpeg")
 
 		for i in range(2, len(onlyfiles)):
-			img_name_1 = os.path.join(folder,str(i)+".jpeg") 
+			img_name_1 = os.path.join(folder,str(i)+".jpeg")
 
 			difference = img_compare(img_name_1, last_saved)
 			print img_name_1 , " , " , last_saved , ":" ,difference
@@ -149,9 +149,6 @@ class Video:
 		count=0
 		nm=1
 
-		print cap.get(7)
-	
-
 		while(cap.isOpened()):
 			frameId=int(frameRate*count)		# current frame number
 			# cap.set(1,frameId)
@@ -171,39 +168,53 @@ class Video:
 		print "Extraction completed."
 		return folder
 	###
+
+	@staticmethod
+	def get_duration(video_file):
+		cap=cv2.VideoCapture(video_file)
+		frameRate=cap.get(5)					# frame rate
+		frameCount=cap.get(7)
+		cap.release()
+
+		return int(frameCount/frameRate)
+	###
 ###
 
 
 class Frame:
 	@staticmethod
-	def prepare_img_for_ocr(img_location):
-		img = Image.open(img_location)
+	def prepare_img_for_ocr(img):
 		width, height = img.size
 		if(width < 1366 or height < 768):
 			target_ratio = max(1366/width, 768/height)
 			img = img.resize((width*target_ratio, height*target_ratio), Image.ANTIALIAS)
 		img = img.filter(ImageFilter.SHARPEN)
-		img = img.save(img_location, dpi=(350, 350))
+		return img
 	###
 
 	@staticmethod
 	def extract_words(img_location):
-		Frame.prepare_img_for_ocr(img_location)
 		img = Image.open(img_location)
+		img = Frame.prepare_img_for_ocr(img)
 		raw=tess.image_to_string(img)
 		return raw.lower().split()
 	###
 
 	@staticmethod
-	def get_matched_snapshots(folder, keywords):
-		matched_img_names = []
-		img_names = glob.glob(folder + '/*.jpeg')
-		for img_name in img_names:
+	def get_match_points(folder, keywords):
+		match_points=[]
+		for img in os.listdir(folder):
+			img_name = os.path.join(folder,img)
 			words = Frame.extract_words(img_name)
+
 			for keyword in keywords:
-				if(WordDistance.iskeyword_in_wordlist(keyword, words) and img_name not in matched_img_names):
-					matched_img_names.append(img_name)
-		return matched_img_names
+				if(WordDistance.iskeyword_in_wordlist(keyword, words) and img not in match_points):
+					match_points.append(img)		# We extracted frames in 1sec interval. So img name is time in sec.
+
+		for i in xrange(len(match_points)):
+			match_points[i]=int(match_points[i].split(".")[0])
+
+		return match_points
 	###
 ###
 
@@ -222,6 +233,23 @@ class Subtitle:
 	###
 
 	@staticmethod
+	def get_match_points(subs, keywords):
+		match_points=[]
+
+		for i in range(0, len(subs)):
+			sub = subs[i]
+			text = sub.text
+			for kw in keywords:
+				if(kw in sub.text):
+					s=sub.start.hours*3600+sub.start.minutes*60+sub.start.seconds
+					e=sub.end.hours*3600+sub.end.minutes*60+sub.end.seconds
+					match_points.append((s+e)/2)
+
+		return match_points
+	###
+
+
+	@staticmethod
 	def print_subs(subs):
 		for i in range(0, len(subs)):
 			sub = subs[i]
@@ -233,7 +261,7 @@ class Subtitle:
 
 
 class Audio:
-	BING_KEY = "e6a333fe4c364e35b464893e5f9a7320" 
+	BING_KEY = "e6a333fe4c364e35b464893e5f9a7320"
 	WIT_AI_KEY = "PMXQI5BPL4M2MN5LG5RDVDSLSGR4RB5Q"
 
 	@staticmethod
@@ -285,7 +313,7 @@ class Audio:
 	def slice_audio(audio_file_name, slice_duration):
 		if(os.path.exists('./trim')):
 			shutil.rmtree('./trim')
-		
+
 		os.mkdir('trim')
 
 		whole_audio = AudioSegment.from_wav(audio_file_name)
@@ -327,7 +355,7 @@ class Audio:
 			eh = int(end_time//3600)
 			em = int((end_time - sh*3600)//60)
 			es = end_time%60
-			
+
 			time_str = '%02d:%02d:%02d,000 --> %02d:%02d:%02d,000\n'%(sh, sm, ss, eh, em, es)
 			srt_file.write(time_str)
 			srt_file.write(whole_string[i]+'\n\n')
@@ -385,10 +413,10 @@ class Audio:
 	@staticmethod
 	def transcribe_video_file(video_file_name, slice_duration = 15):
 		audio_file_name = Audio.extract_audio(video_file_name)
-		
+
 		print '\n\nStarted transcribing...'
 		transcribed_srt_file_name = Audio.build_srt_from_audio(audio_file_name, slice_duration)
-		
+
 		Audio.clean_up(audio_file_name)
 
 		return transcribed_srt_file_name
@@ -410,6 +438,7 @@ class WordDistance:
 		if(ord(x) >= ord('A') and ord(x) <= ord('Z')):
 			return True
 		return False
+	###
 
 	@staticmethod
 	def get_group_index(x):
@@ -482,7 +511,7 @@ class WordDistance:
 					WordDistance.substitute_costs[i][j] = 0
 				else:
 					WordDistance.substitute_costs[i][j] = WordDistance.substitute_costs[j][i] = WordDistance.get_distance(chr(i), chr(j))
-		
+
 		return
 	###
 
@@ -502,5 +531,47 @@ class WordDistance:
 			if(WordDistance.issameword(keyword, word) == True):
 				return True
 		return False
+	###
+###
 
+def get_hotspot(duration, audio_points, video_points, factor=5):
+	hotspot=[0.0]*(duration/factor);
+
+	for point in audio_points:
+		hotspot[point/factor]+=2
+
+	for point in video_points:
+		hotspot[point/factor]+=3
+
+	temp=hotspot[:]
+	for i in xrange(2,len(hotspot)-2):
+		temp[i]=(hotspot[i-2]+2*hotspot[i-1]+3*hotspot[i]+2*hotspot[i+1]+hotspot[i+2])/9
+
+	hotspot=[]
+	s=None
+	a=0
+
+	for i in xrange(len(temp)):
+		if(temp[i]==0):
+			if(s is not None):
+				a/=(i-s)
+				if(a>0.5): hotspot.append((s*factor,i*factor, a))
+				s=None
+			a=0
+		else:
+			if(s is None): s=i
+			a+=temp[i]
+
+	temp=hotspot[:]
+	hotspot=[temp[0]]
+
+	for i in xrange(1,len(temp)):
+		(ps,pe,pa)=hotspot[-1]
+		(ns,ne,na)=temp[i]
+		ca=(pa*(pe-ps)+na*(ne-ns))/(ne-ps)
+
+		if(ca>0.6): hotspot[-1]=(ps,ne,ca)
+		else: hotspot.append((ns,ne,na))
+
+	return hotspot
 ###

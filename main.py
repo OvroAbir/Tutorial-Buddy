@@ -1,29 +1,26 @@
 from api_collection import *
 from os.path import expanduser as native_path
 
-file=Youtube.download(video_id="1p6LfUkWPKI", download_folder=native_path("~/Desktop"))
+f=Youtube.download(video_id="1p6LfUkWPKI", download_folder=native_path("~/Desktop"))
 
-# print file
-
-keywords=['assembly', 'programming', 'x86', 'denial', 'service']
+keywords=['assembly']
 temp=native_path("~/Desktop/snapshots")
 
-Video.extract_frames(file, folder=temp)
-Video.eliminate_irrelevants(folder=temp)
+# Video.extract_frames(f, folder=temp)
+# Video.eliminate_irrelevants(folder=temp)
 
-print '\n\nFrom tesseract:'
-print Frame.get_matched_snapshots(temp, keywords)
+duration=Video.get_duration(f)
 
-'''print '\n\nAnalysis using subtile:'
+video_points=Frame.get_match_points(temp,keywords)
+# Youtube.download_subtitle('1p6LfUkWPKI')
 
-srtfile = '1.srt'
+print video_points
+
+srtfile = '1p6LfUkWPKI.en.srt'
 subs = pysrt.open(srtfile)
 
-keywords = ['assembly', 'language']
-matched_subs = Subtitle.get_matched_subs(subs, keywords)
-Subtitle.print_subs(matched_subs)
+audio_points=Subtitle.get_match_points(subs,keywords)
 
-#f = Audio.transcribe_video_file("/home/joy/Desktop/ffile.mp4")
+print get_hotspot(duration, audio_points, video_points)
 
-print 'Here'
-print Youtube.download_subtitle('1p6LfUkWPKI')'''
+# Audio.transcribe_video_file(f)
