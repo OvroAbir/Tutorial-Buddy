@@ -64,7 +64,7 @@ sudo pip install ffmpy
 ```
 #!bash
 
-sudo apt-get install youtube-dl
+sudo apt-get install --upgrade youtube-dl
 ```
 
 * Install weighted-levenshtein: 

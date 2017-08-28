@@ -31,6 +31,12 @@ class Youtube:
 	###
 
 	@staticmethod
+	def getname(video_id):
+		yt=YouTube("https://www.youtube.com/watch?v="+video_id)
+		return yt.filename
+	###
+
+	@staticmethod
 	def search(search_term, max_results=25):
 		DEVELOPER_KEY="AIzaSyAyXI7PZSzjmE5luCjhr8q01l1JO7hcxFk"
 		YOUTUBE_API_SERVICE_NAME="youtube"
@@ -77,6 +83,8 @@ class Youtube:
 			current_name = vtt_name
 		elif(os.path.isfile(ass_name)):
 			current_name = ass_name
+		else:
+			return None
 
 		inputs = {current_name:None}
 		outputs = {srt_name:None}
@@ -89,12 +97,21 @@ class Youtube:
 	###
 
 	@staticmethod
-	def download_subtitle(video_id):
-		v_url = 'https://www.youtube.com/watch?v='+video_id
-		command = 'youtube-dl -o "%(id)s" --write-sub --write-auto-sub --sub-lang en --sub-format srt --convert-subs srt --skip-download ' + v_url
-		subprocess.call(command, shell=True)
-
-		return Youtube.convert_to_srt(video_id)
+	def download_subtitle(video_id, folder):
+		try:
+			v_url = 'https://www.youtube.com/watch?v='+video_id
+			command = 'youtube-dl -o "%(id)s" --write-sub --write-auto-sub --sub-lang en --sub-format srt --convert-subs srt --skip-download ' + v_url
+			subprocess.call(command, shell=True)
+		except Exception:
+			return None
+		else:
+			sub = Youtube.convert_to_srt(video_id)
+			if sub is None:
+				return None
+			else:
+				newsub = folder + '/' + sub
+				os.rename(sub, newsub)
+				return newsub
 	###
 ###
 
@@ -128,7 +145,7 @@ class Video:
 			img_name_1 = os.path.join(folder,str(i)+".jpeg")
 
 			difference = img_compare(img_name_1, last_saved)
-			print img_name_1 , " , " , last_saved , ":" ,difference
+			#print img_name_1 , " , " , last_saved , ":" ,difference
 
 			if(difference<=2):
 				print "Deleting ", img_name_1
@@ -138,7 +155,8 @@ class Video:
 	###
 
 	@staticmethod
-	def extract_frames(video_file, folder="/tmp/snapshots/"):
+	def extract_frames(video_file, videofolder="/tmp/snapshots/"):
+		folder = videofolder + '/' + 'snapshots'
 		print "Extracting frames in "+folder
 
 		if(os.path.exists(folder)): shutil.rmtree(folder)
@@ -411,7 +429,7 @@ class Audio:
 	###
 
 	@staticmethod
-	def transcribe_video_file(video_file_name, slice_duration = 15):
+	def transcribe_video_file(video_file_name, folder, slice_duration = 15):
 		audio_file_name = Audio.extract_audio(video_file_name)
 
 		print '\n\nStarted transcribing...'
@@ -419,7 +437,10 @@ class Audio:
 
 		Audio.clean_up(audio_file_name)
 
-		return transcribed_srt_file_name
+		new_srt_name = folder+'/'+transcribed_srt_file_name
+		os.rename(transcribed_srt_file_name, new_srt_name)
+
+		return new_srt_name
 	###
 ###
 
@@ -528,6 +549,9 @@ class WordDistance:
 	@staticmethod
 	def iskeyword_in_wordlist(keyword, wordlist):
 		for word in wordlist:
+			if isinstance(word, unicode):
+				word = word.encode('ascii', 'ignore')
+				#print(word, ' is unicode......,,,', asciiword)
 			if(WordDistance.issameword(keyword, word) == True):
 				return True
 		return False
@@ -535,6 +559,8 @@ class WordDistance:
 ###
 
 def get_hotspot(duration, audio_points, video_points, factor=5):
+	#print(video_points)
+	#print(audio_points)
 	hotspot=[0.0]*(duration/factor);
 
 	for point in audio_points:
