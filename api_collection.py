@@ -136,14 +136,14 @@ class Video:
 		###
 
 		onlyfiles = [f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f))]
+		onlyfiles.sort()
 		have_to_delete=False
 		num_of_imgs = len(onlyfiles)
 
-		last_saved=os.path.join(folder,str(1)+".jpeg")
+		last_saved=os.path.join(folder,onlyfiles[0])
 
-		for i in range(2, len(onlyfiles)):
-			img_name_1 = os.path.join(folder,str(i)+".jpeg")
-
+		for i in range(1, len(onlyfiles)):
+			img_name_1 = os.path.join(folder,onlyfiles[i])
 			difference = img_compare(img_name_1, last_saved)
 			#print img_name_1 , " , " , last_saved , ":" ,difference
 
@@ -175,7 +175,7 @@ class Video:
 			if(ret is False): break
 
 			if(count%int(frameRate)==0):
-				filename=os.path.join(folder,"{}.jpeg".format(nm))
+				filename=os.path.join(folder,"{:0>7}.jpeg".format(nm))
 				cv2.imwrite(filename, frame)
 				nm+=1
 
@@ -234,6 +234,31 @@ class Frame:
 
 		return match_points
 	###
+	@staticmethod
+	def get_matched_intervals(folder, keywords):
+		intervals = []
+		imgs = os.listdir(folder)
+		imgs.sort()
+		#print(imgs)
+		for i in range(len(imgs)):
+			img = imgs[i]
+			img_name = os.path.join(folder,img)
+			words = Frame.extract_words(img_name)
+
+			for keyword in keywords:
+				if WordDistance.iskeyword_in_wordlist(keyword, words):
+					point = int(img.split('.')[0])
+					if(i < len(imgs)-1):
+						npoint = int(imgs[i+1].split('.')[0])
+						intervals.append([point, npoint])
+					else:
+						intervals.append([point, point])
+
+
+		return intervals
+	###
+
+
 ###
 
 
@@ -265,7 +290,18 @@ class Subtitle:
 
 		return match_points
 	###
+	
+	@staticmethod
+	def get_matched_intervals(subs, keywords):
+		matched_subs = Subtitle.get_matched_subs(subs, keywords)
+		intervals = []
 
+		for sub in matched_subs:
+			s=sub.start.hours*3600+sub.start.minutes*60+sub.start.seconds
+			e=sub.end.hours*3600+sub.end.minutes*60+sub.end.seconds
+			intervals.append([s, e])
+		return intervals		
+	###
 
 	@staticmethod
 	def print_subs(subs):
@@ -559,8 +595,8 @@ class WordDistance:
 ###
 
 def get_hotspot(duration, audio_points, video_points, factor=5):
-	#print(video_points)
-	#print(audio_points)
+	print(video_points)
+	print(audio_points)
 	hotspot=[0.0]*(duration/factor);
 
 	for point in audio_points:
@@ -572,6 +608,8 @@ def get_hotspot(duration, audio_points, video_points, factor=5):
 	temp=hotspot[:]
 	for i in xrange(2,len(hotspot)-2):
 		temp[i]=(hotspot[i-2]+2*hotspot[i-1]+3*hotspot[i]+2*hotspot[i+1]+hotspot[i+2])/9
+	print("temp")
+	print(temp)
 
 	hotspot=[]
 	s=None
@@ -600,4 +638,16 @@ def get_hotspot(duration, audio_points, video_points, factor=5):
 		else: hotspot.append((ns,ne,na))
 
 	return hotspot
+###
+
+def merge_intervals(intervals, minIntervalDiff):
+	intervals.sort(key=lambda tup:tup[0])
+	result = [intervals[0]]
+	for i in xrange(1, len(intervals)):
+		prev, current = result[-1], intervals[i]
+		if current[0] <= prev[1]+minIntervalDiff: 
+			prev[1] = max(prev[1], current[1])
+		else:
+			result.append(current)
+	return result
 ###

@@ -51,17 +51,29 @@ def process_video(videoid, keywords, folder):
 		subfilename = Audio.transcribe_video_file(videofilename, videofolder, 25)
 
 	make_decisions(videofilename, keywords, subfilename, snapfolder, videofolder)
+###
 
 def make_decisions(videofilename, keywords, subfilename, snapfolder, videofolder):
 	duration=Video.get_duration(videofilename)
-	video_points=Frame.get_match_points(snapfolder,keywords)
+	#video_points=Frame.get_match_points(snapfolder,keywords)
+	video_intgervals = Frame.get_matched_intervals(snapfolder, keywords)
 	subs = pysrt.open(subfilename)
-	audio_points=Subtitle.get_match_points(subs,keywords)
-	hotspots = get_hotspot(duration, audio_points, video_points)
-	times = process_hotspots(hotspots)
+	#audio_points=Subtitle.get_match_points(subs,keywords)
+	audio_intervals = Subtitle.get_matched_intervals(subs, keywords)
+	#hotspots = get_hotspot(duration, audio_points, video_points)
+	
+	intervals = audio_intervals[:]
+	for vi in video_intgervals:
+		intervals.append(vi)
+
+	minintervaldiff = max(30, duration/20)
+	intervals = merge_intervals(intervals, minintervaldiff)
+	#times = process_hotspots(hotspots)
+	times = process_hotspots(intervals)
 	print("Times are : ")
 	print(times)
-	writeOutputfile(videofolder, times, video_points, audio_points)
+	writeOutputfile(videofolder, times, video_intgervals, audio_intervals)
+###
 
 def convert_time(sec):
 	Hour = sec//3600
@@ -79,7 +91,7 @@ def process_hotspots(hotspots):
 		time = []
 		time.append(convert_time(startSec))
 		time.append(convert_time(endSec))
-		time.append(hotspots[i][2])
+		#time.append(hotspots[i][2])
 		times.append(time) 
 	return times
 ###
@@ -88,6 +100,18 @@ def get_timefrom_tuple(tuple):
 	s = str(tuple[0]) + ' hour ' + str(tuple[1]) + ' min ' + str(tuple[2]) + ' sec\n'
 	return s
 ###
+
+def get_string_from_list(lst):
+	s = '['
+	for l in lst:
+		s += '['
+		s += str(l[0])
+		s += ', '
+		s += str(l[1])
+		s += '], '
+	s = s[:-1]
+	s += ']\n'
+	return s
 
 def writeOutputfile(videofolder, times, vpoints, apoints):
 	filename = videofolder + '/' + 'result.txt'
@@ -98,16 +122,16 @@ def writeOutputfile(videofolder, times, vpoints, apoints):
 		string += get_timefrom_tuple(times[i][0])
 		string += 'Ending time : '
 		string += get_timefrom_tuple(times[i][1])
-		string += 'Weight : '
-		string += str(times[i][2])
+		#string += 'Weight : '
+		#string += str(times[i][2])
 		string += '\n'
 	file.write(string)
-	'''
+	
 	file.write('Video Points : ')
-	file.write(vpoints)
-	file.write('Audio Points : ')
-	file.write(apoints)
-	'''
+	file.write(get_string_from_list(vpoints))
+	
+	file.write('\nAudio Points : ')
+	file.write(get_string_from_list(apoints))
 
 	file.close()
 ###
