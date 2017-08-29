@@ -79,3 +79,5 @@ sudo pip install weighted-levenshtein
 #!bash
 sudo pip install numpy
 ```
+
+One should run driver.py file after writing input file.

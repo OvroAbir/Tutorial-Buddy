@@ -258,7 +258,38 @@ class Frame:
 		return intervals
 	###
 
+	@staticmethod
+	def resize_images_half(folder):
+		subfolder = folder + '/subfolder'
+		if os.path.exists(subfolder):
+			shutil.rmtree(subfolder)
+		
+		main_imgs = os.listdir(folder)
+		'''img = Image.open(folder+'/'+main_imgs[0])
+		width, height = img.size
+		if(width < 500 and height < 400):
+			return None
+		'''
+		os.mkdir(subfolder)
 
+		for img_name in main_imgs:
+			img = Image.open(folder+'/'+img_name)
+			out_name = subfolder+'/'+img_name
+			width, height = img.size
+			img = img.resize((int(width*.5), int(height*.5)), Image.ANTIALIAS)
+			img.save(out_name, 'JPEG')
+		return subfolder
+	###
+
+	@staticmethod
+	def delete_high_res_imgs(folder, subfolder):
+		simgs = os.listdir(subfolder)
+		bimgs = [f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f))]
+
+		for bimg in bimgs:
+			if bimg not in simgs:
+				os.remove(folder+'/'+bimg)
+	###
 ###
 
 

@@ -43,7 +43,10 @@ def process_video(videoid, keywords, folder):
 	videofilename = Youtube.download(videoid, videofolder)
 	
 	snapfolder = Video.extract_frames(videofilename, videofolder)
-	Video.eliminate_irrelevants(snapfolder)
+	subfolder = Frame.resize_images_half(snapfolder)
+	Video.eliminate_irrelevants(subfolder)
+	Frame.delete_high_res_imgs(snapfolder, subfolder)
+	shutil.rmtree(subfolder)
 
 	print("Downloading subtitile")
 	subfilename = Youtube.download_subtitle(videoid, videofolder)
@@ -127,15 +130,15 @@ def writeOutputfile(videofolder, times, vpoints, apoints):
 		string += '\n'
 	file.write(string)
 	
-	file.write('Video Points : ')
+	file.write('Video Intervals : ')
 	file.write(get_string_from_list(vpoints))
 	
-	file.write('\nAudio Points : ')
+	file.write('\nAudio Intervals : ')
 	file.write(get_string_from_list(apoints))
 
 	file.close()
 ###
 
-print('ok')
+
 input = read_input()
 driver_function(input)
