@@ -212,6 +212,7 @@ class Frame:
 
 	@staticmethod
 	def extract_words(img_location):
+		print('Reading image {}'.format(img_location))
 		img = Image.open(img_location)
 		img = Frame.prepare_img_for_ocr(img)
 		raw=tess.image_to_string(img)
@@ -244,8 +245,11 @@ class Frame:
 			img = imgs[i]
 			img_name = os.path.join(folder,img)
 			words = Frame.extract_words(img_name)
+			#print(img)
+			#print(words)
 
 			for keyword in keywords:
+				#print('here', keyword)
 				if WordDistance.iskeyword_in_wordlist(keyword, words):
 					point = int(img.split('.')[0])
 					if(i < len(imgs)-1):
@@ -460,8 +464,8 @@ class Audio:
 
 		for i in range(0, num_of_files):
 			part_file_name = 'trim/part%d.wav'%(i)
-			part_text = Audio.get_text_from_part_audio_BING(part_file_name)
-			#part_text = Audio.get_text_from_part_audio_WIT(part_file_name)
+			#part_text = Audio.get_text_from_part_audio_BING(part_file_name)
+			part_text = Audio.get_text_from_part_audio_WIT(part_file_name)
 			whole_string.append(part_text)
 			print "Transcribed %d/%d part files" %(i+1, num_of_files)
 		print '\n'
@@ -607,7 +611,7 @@ class WordDistance:
 	def issameword(word1, word2):
 		WordDistance.generate_weight_table()
 		dist = lev(word1, word2, substitute_costs=WordDistance.substitute_costs)
-
+		#print(word1, word2, dist)
 		if(dist < 0.3):
 			return True
 		return False
@@ -672,6 +676,8 @@ def get_hotspot(duration, audio_points, video_points, factor=5):
 ###
 
 def merge_intervals(intervals, minIntervalDiff):
+	if len(intervals) == 0:
+		return intervals
 	intervals.sort(key=lambda tup:tup[0])
 	result = [intervals[0]]
 	for i in xrange(1, len(intervals)):

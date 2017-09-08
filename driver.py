@@ -20,6 +20,16 @@ def clean_up(folder='output'):
 		shutil.rmtree(folder)
 ###
 
+def get_keywords(keywords_ara):
+	keys = []
+	for keyword in keywords_ara:
+		ks = keyword.split(' ')
+		for k in ks:
+			if k.isalpha() == True and len(k)>0:
+				keys.append(k)
+	return keys
+###
+
 def driver_function(input):
 	clean_up()
 	output_folder = 'output'
@@ -31,7 +41,9 @@ def driver_function(input):
 
 		for video in input[filenum]:
 			videoid = video[0]
-			video_keywords = video[1:]
+			video_keywords = get_keywords(video[1:])
+			print('Keywords are :')
+			print(video_keywords)
 			process_video(videoid, video_keywords, cur_folder)
 ###
 
@@ -59,12 +71,19 @@ def process_video(videoid, keywords, folder):
 def make_decisions(videofilename, keywords, subfilename, snapfolder, videofolder):
 	duration=Video.get_duration(videofilename)
 	#video_points=Frame.get_match_points(snapfolder,keywords)
+	print('Getting video intervals...')
 	video_intgervals = Frame.get_matched_intervals(snapfolder, keywords)
+	print('video intervals : ')
+	print(video_intgervals)
 	subs = pysrt.open(subfilename)
 	#audio_points=Subtitle.get_match_points(subs,keywords)
+	print('getting audio intervals...')
 	audio_intervals = Subtitle.get_matched_intervals(subs, keywords)
+	print('Audio intervals : ')
+	print(audio_intervals)
 	#hotspots = get_hotspot(duration, audio_points, video_points)
 	
+	print('Mergeing intervals...')
 	intervals = audio_intervals[:]
 	for vi in video_intgervals:
 		intervals.append(vi)
@@ -112,7 +131,6 @@ def get_string_from_list(lst):
 		s += ', '
 		s += str(l[1])
 		s += '], '
-	s = s[:-1]
 	s += ']\n'
 	return s
 
@@ -142,3 +160,4 @@ def writeOutputfile(videofolder, times, vpoints, apoints):
 
 input = read_input()
 driver_function(input)
+print('Finished')
