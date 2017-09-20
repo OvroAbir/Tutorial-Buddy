@@ -80,4 +80,4 @@ sudo pip install weighted-levenshtein
 sudo pip install numpy
 ```
 
-One should run driver.py file after writing input file.
+One should run driver.py file after writing youtube video id and keyword in input file.
